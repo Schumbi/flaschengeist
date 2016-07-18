@@ -2,29 +2,31 @@
 
 #include "led.h"
 
+static const uint8_t ON  = 1;
+static const uint8_t OFF = 0;
+
+
 // Implementation of Led Class
 
 CLed_base::CLed_base(const uint8_t pin)
 {
 	this->pin = pin;
 	pinMode(this->pin, OUTPUT);
-	// aus Schalten
 	digitalWrite(this->pin, OFF);
-	this->state = False;
 }
 
-CLed_base:~CLed_base()
+CLed_base::~CLed_base()
 {
 	digitalWrite(this->pin, OFF);
 }
-
-
 
 //###############################
 
 CLed::CLed(const uint8_t pin)
 	: CLed_base::CLed_base(pin)
-{}
+{
+	this->state = false;
+}
 
 // change power level of LED
 void CLed::power(bool state)
@@ -44,7 +46,7 @@ void CLed::switch_on()
 }
 
 // deactivate LED
-void CLed::switch_on()
+void CLed::switch_off()
 {
 	this->power(false);
 }
@@ -57,7 +59,7 @@ bool CLed::isOn()
 //###############################
 
 CLed_fade::CLed_fade(const uint8_t pin, const brightness_t &prog)
-	: Cled::CLed(pin)
+	: CLed(pin)
 {
 	this->setUp(prog);
 }
@@ -74,7 +76,7 @@ void CLed_fade::fade()
 {
 	int check = 0;
 	// wenn die LED angeschlatet ist
-	if(this->isOn)
+	if(this->isOn())
 	{
 		analogWrite(this->pin, this->brightness.val);
 

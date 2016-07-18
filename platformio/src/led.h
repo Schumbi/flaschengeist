@@ -6,13 +6,11 @@
 class CLed_base
 {
 	public:
-	CLed_base();
 	CLed_base(const uint8_t pin);
 	virtual ~CLed_base();
 
-	private:
-		uint8_t pin;				// which pin to use
-		bool state;
+	protected:
+	uint8_t pin;				// which pin to use
 
 };
 
@@ -20,7 +18,6 @@ class CLed_base
 class CLed : public CLed_base
 {
 	public:
-	CLed();
 	CLed(const uint8_t pin);
 
 	// get state of LED
@@ -29,6 +26,9 @@ class CLed : public CLed_base
 	virtual void power(bool state = true);
 	virtual void switch_on();
 	virtual void switch_off();
+	
+	private:
+	bool state;
 
 };
 // fading is implemented in a loop
@@ -46,7 +46,6 @@ class CLed_fade : public CLed
 		int8_t fadeAmount;    // how many steps to fade
 	} brightness_t, *brightness_p;
 
-	CLed_fade();
 	CLed_fade(const uint8_t pin, const brightness_t &prog);
 
 	void fade();

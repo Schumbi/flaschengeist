@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <NeoPixelBus.h>
+//#include <NeoPixelBus.h>
 
 #include "led.h"
 
@@ -9,7 +9,6 @@
 #define ON  0
 #define OFF 1
 
-void fade_leds();
 void setup();
 void loop();
 
@@ -20,48 +19,22 @@ WiFiServer server(80);
 
 const char* ssid = "wlan@schumbi.de";
 const char* password = "Hoha.4wnwlan";
-unsigned int val = 0;
+/*
+CLed::brightness b;
+// start value
+b.val = 2;
+b.max = 175;
+b.min = b.val;
+b.fadeAmount = 1;
+*/
+long int std_step = 10;
 
-int led = LEDPIN;      // the PWM pin the LED is attached to
-int brightness = 2;    // how bright the LED is
-int brightness_max = 175;
-int brightness_min = brightness;
-int fadeAmount = 1;    // how many steps to fade
-long int delay_ms = 10;
-
-
-void fade_leds(int max_b, int min_b, int delay_b)
-{
-  if (val == 0)
-  {
-    analogWrite(led, 0);
-    return;
-  }
-
-  // set the brightness of pin 9:
-  analogWrite(led, brightness);
-
-  // change the brightness for next time through the loop:
-  brightness = brightness + fadeAmount;
-
-  // reverse the direction of the fading at the ends of the fade:
-  if (brightness <= min_b || brightness >= max_b) {
-    fadeAmount = -fadeAmount ;
-	Serial.print(".");
-  }
-  if(!brightness) brightness = 1;
-  // wait for 30 milliseconds to see the dimming effect
-  delay(delay_b * (1.0 + ((float)max_b/(float)brightness)) );
-}
-
+CLed blue_led(LEDPIN);
 
 void setup() {
   Serial.begin(115200);
-  delay(10);
+  delay(std_step);
 
-  // prepare GPIO2
-  pinMode(LEDPIN, OUTPUT);
-  digitalWrite(LEDPIN, 0);
 
   pinMode(CTLPIN, OUTPUT);
   digitalWrite(CTLPIN, 1);
@@ -97,7 +70,7 @@ void loop() {
   WiFiClient client = server.available();
   if (!client) {
     digitalWrite(CTLPIN, OFF);
-    fade_leds(brightness_max, brightness_min, delay_ms);
+	delay(std_step);
     return;
   }
   else
@@ -116,9 +89,9 @@ void loop() {
 
   // Match the request
   if (req.indexOf("/gpio/0") != -1)
-    val = 0;
+    blue_led.switch_off();
   else if (req.indexOf("/gpio/1") != -1)
-    val = 1;
+    blue_led.switch_on();
   else {
     Serial.println("invalid request");
     client.stop();
@@ -129,7 +102,7 @@ void loop() {
 
   // Prepare the response
   String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\nLichterkette ist nun ";
-  s += (val) ? "angeschaltet" : "ausgeschaltet";
+  s += (blue_led.isOn()) ? "angeschaltet" : "ausgeschaltet";
   s += "</html>\n";
 
   // Send the response to the client
@@ -141,3 +114,4 @@ void loop() {
   // when the function returns and 'client' object is detroyed
   digitalWrite(CTLPIN, OFF);
 }
+
