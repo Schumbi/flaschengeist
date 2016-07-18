@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "led.h"
+#include "led.hpp"
 
 static const uint8_t ON  = 1;
 static const uint8_t OFF = 0;
@@ -58,10 +58,10 @@ bool CLed::isOn()
 
 //###############################
 
-CLed_fade::CLed_fade(const uint8_t pin, const brightness_t &prog)
+CLed_fade::CLed_fade(const uint8_t pin)
 	: CLed(pin)
 {
-	this->setUp(prog);
+	this->init = false;
 }
 
 void CLed_fade::setUp(const brightness_t &prog)
@@ -70,13 +70,14 @@ void CLed_fade::setUp(const brightness_t &prog)
 	this->brightness.min = prog.min;
 	this->brightness.val = prog.val;
 	this->brightness.fadeAmount = prog.fadeAmount;
+	this->init = true;
 }
 
 void CLed_fade::fade()
 {
 	int check = 0;
 	// wenn die LED angeschlatet ist
-	if(this->isOn())
+	if(this->isOn() && this->init)
 	{
 		analogWrite(this->pin, this->brightness.val);
 
@@ -97,4 +98,16 @@ void CLed_fade::fade()
 	}
 	// nothing will happen, if LED is switched off
 }
+
+void CLed_fade::power(bool state)
+{
+	// store state
+	this->state = state;
+	// set state
+	if(state)
+		analogWrite(this->pin, this->brightness.min);
+	else
+		analogWrite(this->pin, 0);
+}
+
 

@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+//#include <ArduinoJson.h>
 //#include <NeoPixelBus.h>
 
-#include "led.h"
+#include "led.hpp"
 
 #define LEDPIN 16
 #define CTLPIN 2
@@ -19,19 +20,22 @@ WiFiServer server(80);
 
 const char* ssid = "wlan@schumbi.de";
 const char* password = "Hoha.4wnwlan";
-/*
-CLed::brightness b;
-// start value
-b.val = 2;
-b.max = 175;
-b.min = b.val;
-b.fadeAmount = 1;
-*/
+
+
 long int std_step = 10;
 
-CLed blue_led(LEDPIN);
+CLed_fade blue_led(LEDPIN);
 
 void setup() {
+
+	CLed_fade::brightness_t blue_brightness;
+	// start value
+	blue_brightness.val = 2;
+	blue_brightness.max = 175;
+	blue_brightness.min = blue_brightness.val;
+	blue_brightness.fadeAmount = 1;
+	blue_led.setUp(blue_brightness);
+
   Serial.begin(115200);
   delay(std_step);
 
@@ -71,6 +75,7 @@ void loop() {
   if (!client) {
     digitalWrite(CTLPIN, OFF);
 	delay(std_step);
+	blue_led.fade();
     return;
   }
   else
