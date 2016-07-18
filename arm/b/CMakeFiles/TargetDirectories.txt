@@ -1,0 +1,6 @@
+/home/ralf/devel/makelight/arm/b/CMakeFiles/edit_cache.dir
+/home/ralf/devel/makelight/arm/b/CMakeFiles/rebuild_cache.dir
+/home/ralf/devel/makelight/arm/b/sources/CMakeFiles/edit_cache.dir
+/home/ralf/devel/makelight/arm/b/sources/CMakeFiles/rebuild_cache.dir
+/home/ralf/devel/makelight/arm/b/sources/CMakeFiles/controller.dir
+/home/ralf/devel/makelight/arm/b/sources/CMakeFiles/controller_automoc.dir
