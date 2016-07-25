@@ -111,9 +111,9 @@ void loop() {
   WiFiClient client = server.available();
   if (!client) {
     digitalWrite(CTLPIN, OFF);
-	delay(std_step);
 	blue_led.fade();
 	webSocket.loop();
+	delay(std_step);
     return;
   }
   else
