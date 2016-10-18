@@ -1,2 +1,0 @@
-/home/ralf/devel/makelight/arduino/build/CMakeFiles/edit_cache.dir
-/home/ralf/devel/makelight/arduino/build/CMakeFiles/rebuild_cache.dir
