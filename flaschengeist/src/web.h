@@ -3,6 +3,8 @@
 
 #include <ESP8266WebServer.h>
 
+// http://links2004.github.io/Arduino/d3/d58/class_e_s_p8266_web_server.html
+
 // initialize webserver
 void init_web();
 

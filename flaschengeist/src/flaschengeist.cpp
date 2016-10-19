@@ -8,13 +8,11 @@
 void setup();
 void loop();
 
-// http://links2004.github.io/Arduino/d3/d58/class_e_s_p8266_web_server.html
-
 const char* ssid = "wlan@schumbi.de";
 const char* password = "Hoha.4wnwlan";
 const int std_step = 100; // ms
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(2);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(3);
 
 void setup()
 {
@@ -56,7 +54,6 @@ void setup()
 
 	// activate webserver
 	init_web();
-
 	strip.Begin();
 }
 
@@ -67,11 +64,12 @@ void loop() {
 	int a0 = analogRead(A0);
 	Serial.printf(" %4d", a0/4);
 
-	RgbColor c1(a0/8,1,1);
+	RgbColor c1(256-a0/4,1,1);
+	strip.SetPixelColor(0,c1);
+	c1.G = 256 - a0/4;
 	strip.SetPixelColor(1,c1);
-
-	RgbColor c2(1,a0/8,1);
-	strip.SetPixelColor(0,c2);
+	c1.B = 256 - a0/4;
+	strip.SetPixelColor(2,c1);
 
 	strip.Show();
 	delay(std_step);

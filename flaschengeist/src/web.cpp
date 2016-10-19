@@ -32,7 +32,7 @@ void www_std()
 
 void www_led()
 {
-	int state = server.arg("state").toInt();
+	server.arg("state").toInt();
 	// Hier anschalten, was auch immer
 	// blue_led.power(state);
 	server.sendHeader("Location", String("/"), true);
