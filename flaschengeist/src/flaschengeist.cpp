@@ -1,25 +1,26 @@
 #include <Arduino.h>
 
-#include <ESP8266WiFi.h>
 #include <NeoPixelBus.h>
 
+#include "wifi.h"
+
 #include "web.h"
+
+
+
+const int std_step = 100; // ms
 
 void setup();
 void loop();
 
-const char* ssid = "wlan@schumbi.de";
-const char* password = "Hoha.4wnwlan";
-const int std_step = 100; // ms
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(3);
 
 void setup()
 {
-	// Serial Stuff
-	Serial.begin(115200);
-	Serial.setDebugOutput(true);
-	Serial.println("Start...");
+	Serial.begin(115200);  
+	Serial.setDebugOutput(1);
+	Serial.setDebugOutput(0);
 	delay(10);
 
 	// Hardware Stuff
@@ -30,48 +31,45 @@ void setup()
 	pinMode(D8, OUTPUT);
 	digitalWrite(D8, HIGH);
 
+	//pinMode(D7, OUTPUT);
+	//digitalWrite(D7, LOW);
+	strip.Begin();
+
 	// D6 - Power on/off light sensor (sink) Low, light sensor on
 	pinMode(D6, OUTPUT);
 	digitalWrite(D6, LOW);
 
-	pinMode(A0, INPUT);
+	//pinMode(A0, INPUT);
 
-	// Connect to WiFi network
-	// switch off ESPs own wifi Network
-	WiFi.softAPdisconnect(true);
-	Serial.print("SoftAP disabled\n");
-	// add Wifi
-	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.print("Connected to ");
-	Serial.println(WiFi.SSID());
-	Serial.print("IP: ");
-	Serial.println(WiFi.localIP());
+	// activate ws2812s
+	strip.ClearTo(RgbColor(128,128,128));
+	strip.Show();
 
+	wifi_connect();
 	// activate webserver
 	init_web();
-	strip.Begin();
+
+	// initial pixel count
+	const int l = 64;
+	strip.SetPixelColor(0,RgbColor(0,0,l)); // oben rechts (vom Auge aus reingesehen)
+	strip.SetPixelColor(1,RgbColor(0,l,0)); // oben links
+	strip.SetPixelColor(2,RgbColor(l,0,0)); // unten
+	strip.Show();
 }
 
 void loop() {
-	// do what, you need to do
+
 	webwork();
-
-	int a0 = analogRead(A0);
-	Serial.printf(" %4d", a0/4);
-
-	RgbColor c1(256-a0/4,1,1);
-	strip.SetPixelColor(0,c1);
-	c1.G = 256 - a0/4;
-	strip.SetPixelColor(1,c1);
-	c1.B = 256 - a0/4;
-	strip.SetPixelColor(2,c1);
-
+	// do what, you need to do
+	// this is only a test function
+	//int a0 = analogRead(A0);
+	
+	strip.RotateLeft(1);
+	//strip.SetPixelColor(0,RgbColor(0,0,12)); // oben rechts (vom Auge aus reingesehen)
+	//strip.SetPixelColor(1,RgbColor(0,12,0)); // oben links
+	//strip.SetPixelColor(2,RgbColor(12,0,0)); // unten
 	strip.Show();
-	delay(std_step);
+
+	delay(100);
 }
 
