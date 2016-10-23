@@ -66,10 +66,9 @@ flags = [
   '-x',
   'c++',
   # include files (to get code completion using clang)
-  '-I',
-  '.',
-  '-I', 
-  './src',
+  '-I', '.',
+  '-I', './src',
+  '-I', './lib/TickerScheduler',
   # Hier habe ich einfach die Ausgaben von Platformio eingetragen
   '-DF_CPU=80000000L',
   '-DPLATFORMIO=021101',

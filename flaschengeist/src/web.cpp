@@ -29,6 +29,7 @@ void init_web()
 void webwork()
 {
 	server.handleClient();
+	MDNS.update();
 }
 
 // call backs for web server

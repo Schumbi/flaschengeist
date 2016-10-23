@@ -22,22 +22,25 @@ logger = logging.getLogger('ycm-extra-conf')
 ## your first `platformio run`.
 PlatformioAutogen = ".pioenvs/"
 
-# All Platformio Arduin Libs
+# All Platformio Arduino Libs
 ## This will link directly to the Platformio Libs for Arduino.
 ## Be warned that this can polute your namespace (in #include)
 ## and slightly increase startup time (while crawling the lib
 ## dir for header files). This will however allow you to
 ## complete for header files you haven't included yet.
-PlatformioArduinoLibs = "~/.platformio/packages/framework-arduinoespressif/libraries/"
+PlatformioArduinoLibs ="~/.platformio/packages/framework-arduinoespressif8266/libraries/"
 
 # Platformio Arduino Core
 ## This links to the Platformio Arduino Cores. This provides 
 ## the core libs, such as Arduino.h and HardwareSerial.h
-PlatformioArduinoCore = "~/.platformio/packages/framework-arduinoespressif/cores/esp8266/"
+PlatformioArduinoCore ="~/.platformio/packages/framework-arduinoespressif8266/cores/esp8266/"
 
 # Platformio Arduino Std Libs
 ## Arduino Std libs from .platformio packages. Provides stdlib.h and such.
 PlatformioArduinoSTD = "~/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include"
+
+NeoPixelLibStd = "~/.platformio/lib/NeoPixelBus_ID547/src"
+WEMOS_D1_mini_pins = "~/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini"
 
 # This is the list of all directories to search for header files.
 # Dirs in this list can be paths relative to this file, absolute
@@ -48,33 +51,34 @@ libDirs = [
            ,PlatformioArduinoCore
            ,PlatformioArduinoLibs
            ,PlatformioArduinoSTD
+		   ,NeoPixelLibStd
+		   ,WEMOS_D1_mini_pins
            ]
 
 flags = [
-    # General flags
-    '-Wall'
-    ,'-x'
-    ,'-ansi'
-    ,'c++'
-
-	# Hier habe ich einfach die Ausgaben von Platformio eingetragen
-	,'-DF_CPU=80000000L'
-	,'-DPLATFORMIO=021101'
-	,'-D__ets__'
-	,'-DICACHE_FLASH'
-	,'-DESP8266'
-	,'-DARDUINO_ARCH_ESP8266'
-	,'-DESP8266_WEMOS_D1MINI'
-	,'-DARDUINO=20300'
-
-    # Customize microcontroler and Arduino version
-    #,'-mmcu=atmega328p'
-    #,'-DF_CPU=16000000L'
-    #,'-DARDUINO_ARCH_AVR'
-    #,'-DARDUINO_AVR_DUEMILANOVE'
-    #,'-DARDUINO=106000'
-    # ,'-MMD -DUSB_VID=null'
-    # ,'-DUSB_PID=null'
+  # General flags
+  '-Wall',
+  '-Wextra',
+  '-Werror',
+  '-Wc++98-compat',
+  '-std=c++11',
+  '-ansi',
+  '-x',
+  'c++',
+  # include files (to get code completion using clang)
+  '-I',
+  '.',
+  '-I', 
+  './src',
+  # Hier habe ich einfach die Ausgaben von Platformio eingetragen
+  '-DF_CPU=80000000L',
+  '-DPLATFORMIO=021101',
+  '-D__ets__',
+  '-DICACHE_FLASH',
+  '-DESP8266',
+  '-DARDUINO_ARCH_ESP8266',
+  '-DESP8266_WEMOS_D1MINI',
+  '-DARDUINO=20300',
 ]
 
 
@@ -177,13 +181,6 @@ def FlagsForFile( filename, **kwargs ):
             compilation_info.compiler_flags_,
             compilation_info.compiler_working_dir_ )
 
-        # NOTE: This is just for YouCompleteMe. it's highly likely that your project
-        # does NOT need to remove the stdlib flag. DO NOT USE THIS IN YOUR
-        # ycm_extra_conf IF YOU'RE NOT 100% SURE YOU NEED IT.
-        #try:
-        #    final_flags.remove( '-stdlib=libc++' )
-        #except ValueError:
-        #    pass
     else:
         relative_to = DirectoryOfThisScript()
         final_flags = MakeRelativePathsInFlagsAbsolute( flags, relative_to )
