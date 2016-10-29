@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <ESP8266WiFi.h>
 
 #include "wifi.h"
@@ -18,15 +17,20 @@ void wifi_connect()
 
 	// add Wifi
 	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED)
+	while(!isWifiUp())
 	{
-		delay(500);
+		delay(250);
 	}
-	/*
-	Serial.print("Connected to ");
-	Serial.println(WiFi.SSID());
-	Serial.print("IP: ");
-	Serial.println(WiFi.localIP());
-	*/
+}
+
+bool isWifiUp()
+{
+	bool ret =  WiFi.status() != WL_CONNECTED;
+	if(ret)
+		Serial.println("Wifi connected!");
+	else
+		Serial.println("Wifi not connected!");
+
+	return ret;
 }
 

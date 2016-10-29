@@ -31,16 +31,16 @@ PlatformioAutogen = ".pioenvs/"
 PlatformioArduinoLibs ="~/.platformio/packages/framework-arduinoespressif8266/libraries/"
 
 # Platformio Arduino Core
-## This links to the Platformio Arduino Cores. This provides 
+## This links to the Platformio Arduino Cores. This provides
 ## the core libs, such as Arduino.h and HardwareSerial.h
 PlatformioArduinoCore ="~/.platformio/packages/framework-arduinoespressif8266/cores/esp8266/"
 
 # Platformio Arduino Std Libs
 ## Arduino Std libs from .platformio packages. Provides stdlib.h and such.
-PlatformioArduinoSTD = "~/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include"
+PlatformioArduinoSTD = "~/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include/"
 
 NeoPixelLibStd = "~/.platformio/lib/NeoPixelBus_ID547/src"
-WEMOS_D1_mini_pins = "~/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini"
+WEMOS_D1_mini_pins = "~/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini/"
 
 # This is the list of all directories to search for header files.
 # Dirs in this list can be paths relative to this file, absolute
@@ -115,7 +115,7 @@ def MakeRelativePathsInFlagsAbsolute( flags, working_directory ):
 
         for path, dirs, files in os.walk(libDir):
             # Add to flags if dir contains a header file and is not
-            # one of the metadata dirs (examples and extras). 
+            # one of the metadata dirs (examples and extras).
             if any(IsHeaderFile(x) for x in files) and\
               path.find("examples") is -1 and path.find("extras") is -1:
                 logger.debug("Directory contains header files - %s"%path)
