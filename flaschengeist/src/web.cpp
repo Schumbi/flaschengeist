@@ -1,10 +1,13 @@
 #include "web.h"
 
+#ifdef NoWebCpp
+
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
 // http://links2004.github.io/Arduino/d3/d58/class_e_s_p8266_web_server.html
+
 
 #include "strings.h"
 
@@ -61,4 +64,6 @@ void www_404()
 	Response = html_anfang + "Not found!" + html_ende;
 	server.send(404, "text/html", Response);
 }
+
+#endif
 

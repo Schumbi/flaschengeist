@@ -15,6 +15,8 @@ class CLedStrip : public NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>
 			uint16_t min;
 			uint16_t max;
 			uint16_t ctr;
+			int16_t period;
+			bool state;
 		}prog_param_t, prog_param_ptr;
 
 		CLedStrip(uint8_t count = num_leds, uint8_t prog = 0);

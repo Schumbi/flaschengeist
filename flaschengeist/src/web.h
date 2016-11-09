@@ -1,6 +1,8 @@
 #ifndef MAKELIGTH_WEB_H
 #define MAKELIGTH_WEB_H
 
+#ifdef NoWebCPP
+
 // initialize webserver
 void init_web();
 
@@ -15,5 +17,7 @@ void www_404();
 
 // webserver loop
 void webwork();
+
+#endif
 
 #endif

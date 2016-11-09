@@ -1,11 +1,12 @@
 #include <NeoPixelBus.h>
 #include <TickerScheduler.h>
 
-#include "wifi.h"
+//#include "wifi.h"
+#include "network.h"
 #include "web.h"
 #include "strip.h"
 
-#define LED_TICK 1
+#define LED_TICK 4
 #define WEB_TICK 10
 
 void setup();
@@ -31,21 +32,21 @@ void setup()
 	pinMode(D6, OUTPUT);
 	digitalWrite(D6, LOW);
 
-	// connect to wifi
-	wifi_connect();
-
-	// activate webserver
-	init_web();
-
 	// initialize schedule
 	ts.add(0, LED_TICK, update_leds);
 
 	// LED Strip acitvate
 	CLedStrip* strip = CLedStrip::getStrip_ptr();
 	strip->init();
-	strip->getConf().max = 33;
-	strip->getConf().min = 0;
-	strip->switch_program(1);
+	strip->getConf().ctr = 50;
+	strip->getConf().min = 120;
+	strip->getConf().period = 5;
+	strip->switch_program(2);
+
+	String ssid = "iot@schumbi.de";
+	String pass = "Hoha.4wniot";
+
+	ns_net::Network::StartNetwork(ssid, pass);
 }
 
 void loop() {
@@ -53,9 +54,10 @@ void loop() {
 	ts.update();
 	// this is only a test function
 	//int a0 = analogRead(A0);
-	webwork();
 	// busy wait
-	delay(WEB_TICK);
+	ns_net::Network* n = ns_net::Network::GetNetwork(); 
+	if(n)
+		n->webwork();
 }
 
 void update_leds()
