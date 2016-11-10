@@ -110,4 +110,3 @@ void CLed_fade::power(bool state)
 		analogWrite(this->pin, 0);
 }
 
-

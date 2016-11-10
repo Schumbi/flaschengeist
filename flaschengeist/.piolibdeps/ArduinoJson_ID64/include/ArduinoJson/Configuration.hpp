@@ -22,12 +22,17 @@
 #define ARDUINOJSON_USE_INT64 0
 #endif
 
-// arduino has its own implementation of String to replace std::string
-#ifndef ARDUINOJSON_USE_ARDUINO_STRING
-#define ARDUINOJSON_USE_ARDUINO_STRING 1
+// Arduino has its own implementation of String to replace std::string
+#ifndef ARDUINOJSON_ENABLE_ARDUINO_STRING
+#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 #endif
 
-// arduino doesn't support STL stream
+// Arduino doesn't have std::string
+#ifndef ARDUINOJSON_ENABLE_STD_STRING
+#define ARDUINOJSON_ENABLE_STD_STRING 0
+#endif
+
+// Arduino doesn't support STL stream
 #ifndef ARDUINOJSON_ENABLE_STD_STREAM
 #define ARDUINOJSON_ENABLE_STD_STREAM 0
 #endif
@@ -40,6 +45,11 @@
 // but must processor needs pointer to be align on word size
 #define ARDUINOJSON_ENABLE_ALIGNMENT 1
 #endif
+#endif
+
+// low value to prevent stack overflow
+#ifndef ARDUINOJSON_DEFAULT_NESTING_LIMIT
+#define ARDUINOJSON_DEFAULT_NESTING_LIMIT 10
 #endif
 
 #else  // assume this is a computer
@@ -68,8 +78,13 @@
 #endif
 
 // on a computer, we can use std::string
-#ifndef ARDUINOJSON_USE_ARDUINO_STRING
-#define ARDUINOJSON_USE_ARDUINO_STRING 0
+#ifndef ARDUINOJSON_ENABLE_STD_STRING
+#define ARDUINOJSON_ENABLE_STD_STRING 1
+#endif
+
+// on a computer, there is no reason to beleive Arduino String is available
+#ifndef ARDUINOJSON_ENABLE_ARDUINO_STRING
+#define ARDUINOJSON_ENABLE_ARDUINO_STRING 0
 #endif
 
 // on a computer, we can assume that the STL is there
@@ -80,6 +95,11 @@
 #ifndef ARDUINOJSON_ENABLE_ALIGNMENT
 // even if not required, most cpu's are faster with aligned pointers
 #define ARDUINOJSON_ENABLE_ALIGNMENT 1
+#endif
+
+// on a computer, we should have a lot of space on the stack
+#ifndef ARDUINOJSON_DEFAULT_NESTING_LIMIT
+#define ARDUINOJSON_DEFAULT_NESTING_LIMIT 50
 #endif
 
 #endif

@@ -1,7 +1,6 @@
 #include <NeoPixelBus.h>
 #include <TickerScheduler.h>
 
-//#include "wifi.h"
 #include "network.h"
 #include "web.h"
 #include "strip.h"

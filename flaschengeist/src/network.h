@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+class WebSocketsClient;
+
 
 namespace ns_net
 {
@@ -17,6 +19,8 @@ namespace ns_net
 			bool connected();
 			
 			void webwork();
+
+			WebSocketsClient* GetSocket();
 
 			static Network* GetNetwork();
 			static Network* StartNetwork(String ssid, String passphrase, String mdnsname = "" );

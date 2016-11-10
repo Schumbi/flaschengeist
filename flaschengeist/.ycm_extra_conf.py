@@ -40,6 +40,7 @@ PlatformioArduinoCore ="~/.platformio/packages/framework-arduinoespressif8266/co
 PlatformioArduinoSTD = "~/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include/"
 
 NeoPixelLibStd = "~/.platformio/lib/NeoPixelBus_ID547/src"
+WebSocketLibStd= "~/.platformio/lib/WebSockets_ID549/src"
 WEMOS_D1_mini_pins = "~/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini/"
 
 # This is the list of all directories to search for header files.
@@ -52,6 +53,7 @@ libDirs = [
            ,PlatformioArduinoLibs
            ,PlatformioArduinoSTD
 		   ,NeoPixelLibStd
+		   ,WebSocketLibStd
 		   ,WEMOS_D1_mini_pins
            ]
 
