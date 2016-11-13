@@ -17,7 +17,7 @@ void get_brightness();
 
 TickerScheduler ts(5);
 
-StaticJsonBuffer<200> jsonBuffer;
+DynamicJsonBuffer jsonBuffer;
 
 void setup()
 {
@@ -55,9 +55,6 @@ void setup()
 
 	ns_net::Network::StartNetwork(ssid, pass, name );
 	
-	JsonObject& root = jsonBuffer.createObject();
-	root["id"] = 1;
-	root["name"] =  name;
 }
 
 void loop() {
@@ -90,7 +87,15 @@ void get_brightness()
 		{
 			uint16_t br = analogRead(A0);
 			//Serial.printf("[Info] ws_client sends brightness %d \n", br);
-			wsclient->sendTXT(String(br).c_str());
+			JsonObject& json = jsonBuffer.createObject(); 
+			json["id"] = MAKELIGHT_ID;
+			json["name"] =  MAKELIGHT_NAME;
+			json["brightness"] = br;
+
+			char buffer[250];
+			json.printTo(buffer, sizeof(buffer));
+			Serial.printf("%s", buffer);
+			wsclient->sendTXT(String(buffer).c_str());
 		}
 	}
 }
