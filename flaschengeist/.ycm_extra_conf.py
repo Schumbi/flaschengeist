@@ -74,6 +74,7 @@ flags = [
   '-I', './.piolibdeps/WebSockets_ID549/src',
   '-I', './.piolibdeps/NeoPixelBus_ID547/src',
   '-I', './.piolibdeps/ESPAsyncTCP_ID305/src',
+  '-I', './.piolibdeps/ArduinoJson_ID64',
   # Hier habe ich einfach die Ausgaben von Platformio eingetragen
   '-DF_CPU=80000000L',
   '-DPLATFORMIO=021101',

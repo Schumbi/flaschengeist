@@ -1,10 +1,13 @@
 #include <NeoPixelBus.h>
 #include <TickerScheduler.h>
 #include <ESP8266mDNS.h>
+#include <ArduinoJson.h>
 
 #include "network.h"
 #include "web.h"
 #include "strip.h"
+
+#include "../wlan.conf"
 
 #define LED_TICK 4
 void setup();
@@ -13,6 +16,8 @@ void update_leds();
 void get_brightness();
 
 TickerScheduler ts(5);
+
+StaticJsonBuffer<200> jsonBuffer;
 
 void setup()
 {
@@ -43,10 +48,16 @@ void setup()
 	strip->getConf().period = 5;
 	strip->switch_program(2);
 
-	String ssid = "iot@schumbi.de";
-	String pass = "Hoha.4wniot";
+	// data included from wlan.conf
+	String ssid = MAKELIGHT_SSID; // makelight
+	String pass = MAKELIGHT_PASS; // xxx
+	String name = MAKELIGHT_NAME; // device1
 
-	ns_net::Network::StartNetwork(ssid, pass, "flaschengeist" );
+	ns_net::Network::StartNetwork(ssid, pass, name );
+	
+	JsonObject& root = jsonBuffer.createObject();
+	root["id"] = 1;
+	root["name"] =  name;
 }
 
 void loop() {
