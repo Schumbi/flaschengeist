@@ -9,11 +9,12 @@ bool CLedStrip::prog0(prog_param_t &conf)
 	
 	if((conf.old_prog != this->_prog) && (this->_prog == id))
 	{
-		this->ClearTo(RgbColor(90,35,5));
+		this->ClearTo(RgbColor(0,0,0));
 		conf.old_prog = id;
 	}
+	//Serial.printf("[Debug] Strip prog %d\n", id);
 	// do, well, nothing...
-	delay(500);
+	//delay(500);
 
 	return true;
 }
@@ -35,6 +36,7 @@ bool CLedStrip::prog1(prog_param_t &conf)
 		ret = true;
 	}
 
+	//Serial.printf("[Debug] Strip prog %d\n", id);
 	// do stuff
 	if(conf.ctr >= conf.max)
 	{
@@ -56,9 +58,9 @@ bool CLedStrip::prog2(prog_param_t &conf)
 	const uint8_t id = 2;
 	bool ret = false;
 
-	uint8_t r = 40;
-	uint8_t g = 20;
-	uint8_t b = 200;
+	uint8_t r = 0;
+	uint8_t g = 0;
+	uint8_t b = 0;
 
 	// not started up to now
 	// initialize
@@ -69,14 +71,14 @@ bool CLedStrip::prog2(prog_param_t &conf)
 		b = 200;
 		this->SetPixelColor(0, RgbColor(0,0,b)); // oben
 		this->SetPixelColor(1, RgbColor(r,g,b)); // mitte
-		this->SetPixelColor(2, RgbColor(r,0,0)); // unten
+		this->SetPixelColor(2, RgbColor(r,0,b)); // unten
 		conf.old_prog = id;
 		ret = true;
 	}
 
 	if(!period)
 	{
-
+		//Serial.printf("[Debug] Strip prog %d\n", id);
 		uint8_t br = conf.ctr;
 
 
@@ -104,7 +106,7 @@ bool CLedStrip::prog2(prog_param_t &conf)
 		else
 			conf.ctr++;
 
-		Serial.println(conf.ctr);
+		//Serial.println(conf.ctr);
 		period = conf.period;;
 	}
 	else
@@ -129,6 +131,7 @@ bool CLedStrip::prog3(prog_param_t &conf)
 		conf.old_prog = id;
 		ret = true;
 	}
+	//Serial.printf("[Debug] Strip prog %d\n", id);
 	// rotate left only
 	this->RotateLeft(1);
 

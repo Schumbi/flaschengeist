@@ -3,6 +3,20 @@
 
 #include <NeoPixelBus.h>
 
+#ifdef DEBUG_STRIP
+#define STRIPDEBUG Dummy
+class Dummy
+{
+	public:
+	int println(String inp)
+	{
+		return 0;
+	}
+};
+#else
+#define STRIPDEBUG Serial
+#endif
+
 const uint8_t num_leds = 3;
 
 class CLedStrip : public NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> 

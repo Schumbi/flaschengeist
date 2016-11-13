@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-class WebSocketsClient;
+#include <WebSocketsClient.h>
 
 
 namespace ns_net

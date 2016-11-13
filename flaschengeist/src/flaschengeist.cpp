@@ -1,16 +1,16 @@
 #include <NeoPixelBus.h>
 #include <TickerScheduler.h>
+#include <ESP8266mDNS.h>
 
 #include "network.h"
 #include "web.h"
 #include "strip.h"
 
 #define LED_TICK 4
-#define WEB_TICK 10
-
 void setup();
 void loop();
 void update_leds();
+void get_brightness();
 
 TickerScheduler ts(5);
 
@@ -33,6 +33,7 @@ void setup()
 
 	// initialize schedule
 	ts.add(0, LED_TICK, update_leds);
+	ts.add(1, 1000, get_brightness);
 
 	// LED Strip acitvate
 	CLedStrip* strip = CLedStrip::getStrip_ptr();
@@ -45,7 +46,7 @@ void setup()
 	String ssid = "iot@schumbi.de";
 	String pass = "Hoha.4wniot";
 
-	ns_net::Network::StartNetwork(ssid, pass);
+	ns_net::Network::StartNetwork(ssid, pass, "flaschengeist" );
 }
 
 void loop() {
@@ -55,13 +56,31 @@ void loop() {
 	//int a0 = analogRead(A0);
 	// busy wait
 	ns_net::Network* n = ns_net::Network::GetNetwork(); 
-	if(n)
+	if(n && n->connected())
+	{
 		n->webwork();
+		MDNS.update();
+	}
 }
 
 void update_leds()
 {
 	// update led pattern / program
 	CLedStrip::getStrip_ptr()->update();
+}
+
+void get_brightness()
+{
+	ns_net::Network* n = ns_net::Network::GetNetwork(); 
+	if(n && n->connected())
+	{
+		WebSocketsClient* wsclient = n->GetSocket();
+		if(wsclient)
+		{
+			uint16_t br = analogRead(A0);
+			//Serial.printf("[Info] ws_client sends brightness %d \n", br);
+			wsclient->sendTXT(String(br).c_str());
+		}
+	}
 }
 

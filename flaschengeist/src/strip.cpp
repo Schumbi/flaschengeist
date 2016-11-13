@@ -35,7 +35,8 @@ bool CLedStrip::update()
 	bool ret = false;
 	if(!_init)
 		return _init;
-
+	
+	//STRIPDEBUG.println("[Debug] Strip update" + String(_prog));
 	// choose program
 	switch(_prog)
 	{
