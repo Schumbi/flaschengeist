@@ -1,5 +1,12 @@
 .pioenvs*
 .piolibdeps*
 wlan.conf
-
 tags
+.clang_complete
+.gcc-flags.json
+.gitignore
+.syntastic_clang_check_config
+.travis.yml
+.vimrc
+.ycm_extra_conf.pyc
+*pycache*

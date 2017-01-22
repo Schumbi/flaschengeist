@@ -7,7 +7,7 @@
 #include "web.h"
 #include "strip.h"
 
-#include "../wlan.conf"
+#include "../../wlan.conf"
 
 #define LED_TICK 4
 void setup();
