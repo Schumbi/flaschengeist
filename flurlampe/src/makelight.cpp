@@ -1,77 +1,46 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#include <PubSubClient.h>
+#include <TickerScheduler.h>
 
 #include "led.hpp"
 
+#include "../wlan.conf"
+
 #define LEDPIN 16
-#define CTLPIN 2
-#define ON  0
-#define OFF 1
 
 void setup();
 void loop();
+void update_leds();
+void update_mqtt_status();
 
-// http://links2004.github.io/Arduino/d3/d58/class_e_s_p8266_web_server.html
+void setup_wifi();
+void callback(char* topic, byte* payload, unsigned int length);
 
-// Create an instance of the server
-// specify the port to listen on as an argument
-//WiFiServer server(80);
-ESP8266WebServer server(80);
+const char* ssid = MAKELIGHT_SSID;
+const char* password = MAKELIGHT_PASS;
+const char* mqtt_server = MAKELIGHT_MQTT_SERVER;
 
-String Response ="";
 
-const char* ssid = "wlan@schumbi.de";
-const char* password = "Hoha.4wnwlan";
+// create MQTT client
+WiFiClient espClient;
+PubSubClient client(espClient);
+long lastMsg = 0;
+char msg[50];
+int value = 0;
+
+// Ticker to update brightness
+TickerScheduler ticker(5);
 
 // LED Stuff
 long int std_step = 10;
 CLed_fade blue_led(LEDPIN);
 
-String html_anfang = "<!DOCTYPE html>\r\n<html>\r\n\
-<head>\r\n<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">\r\n\
-<title>WebSchalter</title>\r\n<body><p>";
-String html_ende = "</p></body>\r\n</html>";
-
-String redirect = "<!DOCTYPE html>\r\n<html>\r\n\
-<head>\r\n\
-<meta content=\"text/html; charset=ISO-8859-1\" \
-<meta http-equiv=\"refresh\" content=\"0; URL='./'\" /> \
-</head><body/></html>";
-
-String form = "<form action='led'><input type='radio' name='state' value='1' checked>On<input type='radio' name='state' value='0'>Off<input type='submit' value='Submit'></form>";
-
-void www_std()
-{
-	String state_led;
-	if(blue_led.isOn())
-		state_led = "an";
-	else
-		state_led = "aus";
-
-	Response = html_anfang + "LED ist " + state_led + "!<br/>";
-	Response += form + html_ende;
-
-	server.send(200, "text/html", Response);
-}
-
-void www_led()
-{
-	int state = server.arg("state").toInt();
-	blue_led.power(state);
-	server.sendHeader("Location", String("/"), true);
-	server.send ( 302, "text/plain", "");
-}
-
-void www_404()
-{
-	Serial.printf("404 - not found");
-	Response = html_anfang + "Not found!" + html_ende;
-	server.send(404, "text/html", Response);
-}
-
+// setup LED and Client
 void setup()
 {
+	pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+
 	// Serial Stuff
 	Serial.begin(115200);
 	Serial.setDebugOutput(true);
@@ -85,98 +54,105 @@ void setup()
 	blue_brightness.min = blue_brightness.val;
 	blue_brightness.fadeAmount = 1;
 	blue_led.setUp(blue_brightness);
+	blue_led.switch_on();
 	Serial.println("LED initialized");
-	// Blue Status lED on Device
-	pinMode(CTLPIN, OUTPUT);
-	digitalWrite(CTLPIN, 1);
-	Serial.println("Blue LED initialized!");
-
-	// Connect to WiFi network
-	// switch off ESPs own wifi Network
-	WiFi.softAPdisconnect(true);
-	Serial.print("SoftAP disabled\n");
-	// add Wifi
-	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.print("Connected to ");
-	Serial.println(WiFi.SSID());
-	Serial.print("IP: ");
-	Serial.println(WiFi.localIP());
-
-	server.on("/", HTTP_GET, www_std);
-	server.on("/led", HTTP_GET, www_led);
-	server.onNotFound(www_404);
-
-	// Start the server
-	server.begin();
-    blue_led.switch_on();
+	// initialize ticker callbacks
+	ticker.add(0, 10, update_leds);
+	ticker.add(1, 1000, update_mqtt_status);
+	// setup networking stuff
+	setup_wifi();
+	client.setServer(mqtt_server, 1883);
+	client.setCallback(callback);
 }
 
+void setup_wifi() 
+{
+
+	digitalWrite(BUILTIN_LED, LOW);
+	delay(10);
+	// We start by connecting to a WiFi network
+	Serial.println();
+	Serial.print("Connecting to ");
+	Serial.println(ssid);
+
+	WiFi.begin(ssid, password);
+
+	while (WiFi.status() != WL_CONNECTED)
+	{
+		digitalWrite(BUILTIN_LED, LOW);
+		delay(500);
+		Serial.print(".");
+		digitalWrite(BUILTIN_LED, HIGH);
+	}
+	Serial.println("");
+	Serial.println("WiFi connected");
+	Serial.println("IP address: ");
+	Serial.println(WiFi.localIP());
+	digitalWrite(BUILTIN_LED, HIGH);
+	delay(100);
+}
+
+void callback(char* topic, byte* payload, size_t length) {
+	// Switch on the LED if an 1 was received as first character
+	if ((char)payload[0] == '0')
+	{
+		blue_led.switch_off();
+	} 
+	else 
+	{
+		blue_led.switch_on();
+	}
+	Serial.println(topic);
+}
+
+void reconnect() 
+{
+	// Loop until we're reconnected
+	while (!client.connected()) 
+	{
+		Serial.print("Attempting MQTT connection...");
+		// Attempt to connect
+		if (client.connect("flurblume")) 
+		{
+			Serial.println("connected");
+			// Once connected, publish an announcement...
+			client.publish("/home/flur/flurblume/status", String(blue_led.isOn()).c_str() );
+			// ... and resubscribe
+			client.subscribe("/home/flur/command");
+			client.subscribe("/home/flur/flurblume/command");
+			digitalWrite(BUILTIN_LED, HIGH);
+		} 
+		else
+		{
+			digitalWrite(BUILTIN_LED, LOW);
+			Serial.print("failed, rc=");
+			Serial.print(client.state());
+			Serial.println(" try again in 2 seconds");
+			delay(2000);
+			digitalWrite(BUILTIN_LED, HIGH);
+		}
+	}
+}
+
+// ticker calls this function to update brightness level of LED
+void update_leds()
+{
+	blue_led.fade();
+}
+
+void update_mqtt_status()
+{
+	if(client.connected())
+		client.publish("/home/flur/flurblume/status", String(blue_led.isOn()).c_str() );
+}
+
+// arduino framework calls this function to update mqtt client and ticker
 void loop() {
-	blue_led.fade();
-	server.handleClient();
-	delay(std_step);
-/**
-  // Check if a client has connected
-  WiFiClient client = server.available();
-  if (!client) {
-    digitalWrite(CTLPIN, OFF);
-	blue_led.fade();
-	webSocket.loop();
-	delay(std_step);
-    return;
-  }
-  else
-    digitalWrite(CTLPIN, ON);
-
-  // Wait until the client sends some data
-  Serial.println("new client");
-  while (!client.available()) {
-    delay(1);
-  }
-
-  // Read the first line of the request
-  String req = client.readStringUntil('\r');
-  Serial.println(req);
-  client.flush();
-
-  // Match the request
-  if (req.indexOf("/gpio/0") != -1)
-  {
-    blue_led.switch_off();
-	webSocket.sendTXT("Switched off");
-  }
-  else if (req.indexOf("/gpio/1") != -1)
-  {
-    blue_led.switch_on();
-	webSocket.sendTXT("Switched on");
-  }
-  else {
-    Serial.println("invalid request");
-	webSocket.sendTXT("Invalid request");
-    client.stop();
-    return;
-  }
-
-  client.flush();
-
-  // Prepare the response
-  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\nLichterkette ist nun ";
-  s += (blue_led.isOn()) ? "angeschaltet" : "ausgeschaltet";
-  s += "</html>\n";
-
-  // Send the response to the client
-  client.print(s);
-  delay(1);
-  Serial.println("Client disonnected");
-
-  // The client will actually be disconnected
-  // when the function returns and 'client' object is detroyed
-  digitalWrite(CTLPIN, OFF);
-  **/
+	if(!client.connected())
+	{
+		reconnect();
+	}
+	client.loop();
+	ticker.update();
 }
 
