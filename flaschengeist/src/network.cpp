@@ -3,26 +3,31 @@
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <PubSubClient.h>
 
 #include <Hash.h>
-#include <WebSocketsClient.h>
-
-#include "strings.h"
-
-#include "network.h"
 
 #include "strip.h"
+#include "strings.h"
+#include "network.h"
+
+const char* mqttServerUrl = "cubier.local";
+const int mqttServerPort = 1883;
+
+const char* inChannel = "/makelight/flaschengeist/in";
+const char* outChannel = "/makelight/flaschengeist/out";
+const char* statusChannel = "/makelight/flaschengeist/status";
 
 namespace ns_net
 {
 	static Network* net = NULL;
 	static ESP8266WebServer* staticServer = NULL;
-	static WebSocketsClient* staticWs = NULL;
-
+	static PubSubClient* staticMqttClient = NULL;
+	
 	void www_404();
 	void www_led();
 	void www_std();
-	void ws_Callback(WStype_t type, uint8_t * payload, size_t lenght);
+	void callback(char* topic, byte* payload, size_t length);
 
 	Network* 
 		Network::GetNetwork()
@@ -46,7 +51,8 @@ namespace ns_net
 			Network_impl() : 
 				_init(false),
 				_started(false),
-				_server(NULL) {}
+				_server(NULL),
+				_mqttClient(NULL) {}
 
 			~Network_impl()
 			{
@@ -54,14 +60,16 @@ namespace ns_net
 				{
 					_server->stop();
 					delete(_server);
+					delete(_mqttClient);
+
+					staticServer = NULL;
+					staticMqttClient = NULL;
 				}
 			}
 
 			String ssid;
 			String password;
 			String mdnsname;
-			String wsgateway;
-			uint16_t wsport;
 
 			ESP8266WebServer* getServer()
 			{
@@ -69,11 +77,20 @@ namespace ns_net
 				{
 					_server = new ESP8266WebServer(80);
 					staticServer = _server;
-					staticWs = &_wsclient;
 					_init = true;
 
 				}
 				return _server;
+			}
+
+			PubSubClient* getMqttClient()
+			{
+				if(_mqttClient == NULL)
+				{
+					_mqttClient = new PubSubClient(_espClient);
+					staticMqttClient = _mqttClient;
+				}
+				return _mqttClient;
 			}
 
 			// maybe set an array here or struct here
@@ -91,24 +108,24 @@ namespace ns_net
 				s->on("/led", HTTP_GET, www_led);
 
 				delay(100);
-				Serial.println("[Debug] Server callbacks set ");
 
-				_wsclient.begin(wsgateway.c_str(), wsport);
-				_wsclient.onEvent(ws_Callback);
-				delay(500);
-				Serial.println("[Debug] WS started callbacks set ");
-
+				_mqttClient = getMqttClient();
+				_mqttClient->setServer(mqttServerUrl, mqttServerPort);
+				_mqttClient->setCallback(callback);
+				Serial.println("[Debug] MQTT client started ");
 
 				if(!MDNS.begin("flaschengeist")) //mdnsname.c_str()))
 				{
 					Serial.println("[Failure] MDNS not started");
 				}
-				delay(1000);
+				delay(100);
 
 				MDNS.addService("http", "tcp", 80);
-				MDNS.addService("ws", "tcp", 2301);
+				MDNS.addService("mqtt", "tcp", 1883);
+				//MDNS.addService("mqtt/ws", "tcp", 8000);
 
 				Serial.println("[Debug] MDNS started");
+				delay(1000);
 				_started = true;
 			}
 
@@ -116,7 +133,6 @@ namespace ns_net
 			{
 				ESP8266WebServer* s = getServer();
 				s->stop();
-				_wsclient.disconnect();
 				_started = false;
 			}
 
@@ -125,19 +141,47 @@ namespace ns_net
 				if(_started)
 				{
 					getServer()->handleClient();
+
+					if(tryConnectMqtt())
+					{
+						_mqttClient->loop();
+					}
 				}
 			}
 
 			bool init() {return _init;}
 			bool started() {return _started;}
 
-			WebSocketsClient _wsclient;
-
 		private:
 			bool _init;
 			bool _started;
 			ESP8266WebServer* _server;
+			PubSubClient* _mqttClient;
+
 			ESP8266HTTPUpdateServer _httpUpdater;
+			WiFiClient _espClient;
+
+
+			bool tryConnectMqtt()
+			{
+				if(!_mqttClient->connected())
+				{
+					if(_mqttClient->connect("flaschengeist"))
+					{
+						Serial.println("connected");
+						// TODO Ontologie des Systems entwicklen und dann hier eintragen
+						_mqttClient->publish(statusChannel, "flaschengeist connected");
+						_mqttClient->subscribe(inChannel);
+						_mqttClient->publish(outChannel, "0");
+					}
+					else
+					{
+						Serial.print("failed, rc=");
+						Serial.print(_mqttClient->state());
+					}
+				}
+				return _mqttClient->connected();
+			}
 
 	};
 
@@ -147,10 +191,6 @@ namespace ns_net
 		d->ssid = ssid;	
 		d->password = password;
 		d->mdnsname = mdnsname;
-
-		// setup websocket TODO mach hübsch
-		d->wsport = 2301;
-		d->wsgateway = "192.168.3.1";
 
 		WiFi.softAPdisconnect(true);
 		WiFi.begin( d->ssid.c_str(), d->password.c_str());
@@ -191,12 +231,6 @@ namespace ns_net
 		}
 	}
 
-	WebSocketsClient*
-		Network::GetSocket()
-		{
-			return &(d->_wsclient);
-		}
-
 	// call backs for web server
 	void www_std()
 	{
@@ -216,10 +250,14 @@ namespace ns_net
 		if(state)
 		{
 			CLedStrip::getStrip_ptr()->switch_program(2);
+			if(staticMqttClient and staticMqttClient->connected())
+				staticMqttClient->publish(outChannel, "2");
 		}
 		else
 		{
 			CLedStrip::getStrip_ptr()->switch_program(0);
+			if(staticMqttClient and staticMqttClient->connected())
+				staticMqttClient->publish(outChannel, "0");
 		}
 
 		staticServer->sendHeader("Location", String("/"), true);
@@ -234,32 +272,39 @@ namespace ns_net
 		staticServer->send(404, "text/html", Response);
 	}
 
-	void ws_Callback(WStype_t type, uint8_t * payload, size_t lenght)
+	void callback(char* topic, byte* payload, size_t length)
 	{
-		Serial.println("[Debug] ws callback Type" + String(type));
-		switch(type) 
+		String topicStr = topic;
+		if(topicStr == String(inChannel))
 		{
-			case WStype_DISCONNECTED:
-				Serial.println("[Debug] ws disconnected ");
-				break;
-			case WStype_CONNECTED:
-				staticWs->sendTXT(String("Flaschengeist").c_str());
-				Serial.println("[Debug] ws connected");
-				break;
-			case WStype_TEXT:
-				if(String((const char*)payload) == "brigthness")
-				{
-					Serial.println("[Debug] ws got text");
-					staticWs->sendTXT(String(analogRead(A0)).c_str());
-				}
-				break;
-			case WStype_BIN:
-				Serial.println("[Debug] ws got bin");
-				break;
-			default:
-				lenght = 1;
-				Serial.println("[Debug] ws default " + String(type));
+			Serial.print("Message arrived [");
+			Serial.print(topic);
+			Serial.print("] ");
+			for (size_t i = 0; i < length; i++) {
+				Serial.print((char)payload[i]);
+			}
+			Serial.println();
+
+			CLedStrip* strip = CLedStrip::getStrip_ptr();
+			// Switch on the LED if an 1 was received as first character
+			if ((char)payload[0] == '1') {
+				if(strip->getConf().old_prog != 2)
+					strip->switch_program(2);
+				staticMqttClient->publish(outChannel, "2");
+				digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+			}
+			else
+			{
+				strip->switch_program(0);
+				staticMqttClient->publish(outChannel, "0");
+				digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+			}
+			staticMqttClient->publish(statusChannel, "updated");
+
 		}
+		else
+			staticMqttClient->publish(statusChannel, String(String("invalid topic: ") + String(topic)).c_str());
+
 	}
 }
 

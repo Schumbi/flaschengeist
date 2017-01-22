@@ -4,20 +4,25 @@ PATH := /usr/bin:$(PATH)
 
 all: run
 
-upload:
+upload: tags
 	platformio -f -c vim run --target upload
 
 clean:
 	platformio -f -c vim run --target clean
+	rm tags
 
-program:
+program: tags
 	platformio -f -c vim run --target program
 
-uploadfs:
+uploadfs: tags
 	platformio -f -c vim run --target uploadfs
 
-update:
+update: tags
 	platformio -f -c vim update
 
-run:
+run: tags
 	platformio -f -c vim run
+
+tags:
+	ctags -R src/* ~/.platformio/packages/framework-arduinoespressif8266/cores/esp8266/* .piolibdeps/**
+	

@@ -79,24 +79,5 @@ void update_leds()
 
 void get_brightness()
 {
-	ns_net::Network* n = ns_net::Network::GetNetwork(); 
-	if(n && n->connected())
-	{
-		WebSocketsClient* wsclient = n->GetSocket();
-		if(wsclient)
-		{
-			uint16_t br = analogRead(A0);
-			//Serial.printf("[Info] ws_client sends brightness %d \n", br);
-			JsonObject& json = jsonBuffer.createObject(); 
-			json["id"] = MAKELIGHT_ID;
-			json["name"] =  MAKELIGHT_NAME;
-			json["brightness"] = br;
-
-			char buffer[250];
-			json.printTo(buffer, sizeof(buffer));
-			Serial.printf("%s", buffer);
-			wsclient->sendTXT(String(buffer).c_str());
-		}
-	}
 }
 
