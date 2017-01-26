@@ -25,6 +25,7 @@ const char* mqtt_server = MAKELIGHT_MQTT_SERVER;
 // create MQTT client
 WiFiClient espClient;
 PubSubClient client(espClient);
+static volatile bool autoSwitchOnEnabled = false;
 long lastMsg = 0;
 char msg[50];
 int value = 0;
@@ -95,18 +96,30 @@ void setup_wifi()
 }
 
 void callback(char* topic, byte* payload, size_t length) {
-	// Switch on the LED if an 1 was received as first character
-	if ((char)payload[0] == '0')
-	{
-		CLedStrip* strip = CLedStrip::getStrip_ptr();
-		strip->switch_program(0);
-	} 
-	else 
-	{
-		CLedStrip* strip = CLedStrip::getStrip_ptr();
-		strip->switch_program(2);
-	}
 	Serial.println(topic);
+
+	if(String(topic) == String("/home/wohnzimmer/flaschengeist/command"))
+	{
+		// Switch on the LED if an 1 was received as first character
+		if ((char)payload[0] == '0')
+		{
+			CLedStrip* strip = CLedStrip::getStrip_ptr();
+			strip->switch_program(0);
+		} 
+		else 
+		{
+			CLedStrip* strip = CLedStrip::getStrip_ptr();
+			strip->switch_program(2);
+		}
+	}
+
+	if(String(topic) == String("/home/wohnzimmer/flaschengeist/auto"))
+	{
+		if ((char)payload[0] == '0')
+			autoSwitchOnEnabled = false;
+		else
+			autoSwitchOnEnabled = true;
+	}
 }
 
 void reconnect() 
@@ -126,6 +139,7 @@ void reconnect()
 			// ... and resubscribe
 			client.subscribe("/home/wohnzimmer/command");
 			client.subscribe("/home/wohnzimmer/flaschengeist/command");
+			client.subscribe("/home/wohnzimmer/flaschengeist/auto");
 			digitalWrite(BUILTIN_LED, HIGH);
 		} 
 		else
@@ -165,18 +179,32 @@ void update_leds()
 
 void get_brightness()
 {
+	int br = analogRead(A0);
 	if(client.connected())
 	{
 		client.publish("/home/wohnzimmer/flaschengeist/brightness",
-			String(analogRead(A0)).c_str());
+				String(br).c_str());
 	}
+	if( autoSwitchOnEnabled)
+	{ 
+		CLedStrip* strip = CLedStrip::getStrip_ptr();
+		if (br < 40)
+			strip->switch_program(2);
+		if (br > 45)
+			strip->switch_program(0);
+	}
+
 	// ... and resubscribe
 }
 
 void update_mqtt_status()
 {
 	if(client.connected())
+	{
 		client.publish("/home/wohnzimmer/flaschengeist/status",
 				String(CLedStrip::getStrip_ptr()->getConf().old_prog).c_str());
+
+		client.publish("/home/wohnzimmer/flaschengeist/auto", String(autoSwitchOnEnabled).c_str() );
+	}
 }
 
