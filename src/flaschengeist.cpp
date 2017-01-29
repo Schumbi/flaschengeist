@@ -188,9 +188,9 @@ void get_brightness()
 	if( autoSwitchOnEnabled)
 	{ 
 		CLedStrip* strip = CLedStrip::getStrip_ptr();
-		if (br < 40)
+		if (br < 100)
 			strip->switch_program(2);
-		if (br > 45)
+		if (br > 120)
 			strip->switch_program(0);
 	}
 
