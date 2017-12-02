@@ -25,6 +25,7 @@ const char* mqtt_server = MAKELIGHT_MQTT_SERVER;
 // create MQTT client
 WiFiClient espClient;
 PubSubClient client(espClient);
+
 static volatile bool autoSwitchOnEnabled = false;
 long lastMsg = 0;
 char msg[50];
@@ -100,16 +101,19 @@ void callback(char* topic, byte* payload, size_t length) {
 
 	if(String(topic) == String("/home/wohnzimmer/flaschengeist/command"))
 	{
-		// Switch on the LED if an 1 was received as first character
-		if ((char)payload[0] == '0')
+		if(length > 0)
 		{
-			CLedStrip* strip = CLedStrip::getStrip_ptr();
-			strip->switch_program(0);
-		} 
-		else 
-		{
-			CLedStrip* strip = CLedStrip::getStrip_ptr();
-			strip->switch_program(2);
+			// Switch on the LED if an 1 was received as first character
+			if ((char)payload[0] == '0')
+			{
+				CLedStrip* strip = CLedStrip::getStrip_ptr();
+				strip->switch_program(0);
+			} 
+			else 
+			{
+				CLedStrip* strip = CLedStrip::getStrip_ptr();
+				strip->switch_program(2);
+			}
 		}
 	}
 
