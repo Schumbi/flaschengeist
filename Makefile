@@ -1,28 +1,32 @@
 # Uncomment lines below if you have problems with $PATH
 SHELL := /bin/bash
 PATH := /usr/bin:$(PATH)
+BIN := .pioenvs/wemos_d1_mini/firmware.bin
+WEBNAME := flaschengeist_1.local
+WEBPATH := firmware
 
 all: run
 
-upload: tags
-	platformio -f -c vim run --target upload
+webupdate: run
+	curl -F "file=@$(BIN)" --user `cat ../user.cred` $(WEBNAME)/$(WEBPATH) > /dev/null
+
+upload:
+	platformio -f -c qtcreator run --target upload;
+	sleep 1;
 
 clean:
-	platformio -f -c vim run --target clean
-	rm tags
+	platformio -f -c qtcreator run --target clean
 
-program: tags
-	platformio -f -c vim run --target program
+program:
+	platformio -f -c qtcreator run --target program
 
-uploadfs: tags
-	platformio -f -c vim run --target uploadfs
+uploadfs:
+	platformio -f -c qtcreator run --target uploadfs
 
-update: tags
-	platformio -f -c vim update
+update: 
+	platformio -f -c qtcreator update
 
-run: tags
-	platformio -f -c vim run
+$(BIN): run
 
-tags:
-	ctags -R src/* ~/.platformio/packages/framework-arduinoespressif8266/cores/esp8266/* .piolibdeps/**
-	
+run: 
+	platformio -f -c qtcreator run

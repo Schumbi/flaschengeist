@@ -1,4 +1,4 @@
-#include "strip.h"
+#include "strip.hpp"
 
 
 bool CLedStrip::prog0(prog_param_t &conf)

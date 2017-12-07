@@ -1,4 +1,4 @@
-#include "strip.h"
+#include "strip.hpp"
 
 static CLedStrip* LedStrip = NULL;
 

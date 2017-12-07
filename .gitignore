@@ -10,3 +10,5 @@ tags
 .vimrc
 .ycm_extra_conf.pyc
 *pycache*
+.pioenvs
+.piolibdeps
