@@ -1,24 +1,24 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266HTTPUpdateServer.h>
-#include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <PubSubClient.h>
 #include <TickerScheduler.h>
 
 #include "strip.hpp"
 
-#include "../../wlan.conf"
 #include "../../pwd.hpp"
+#include "../../wlan.hpp"
 #include "conf.hpp"
 
 #define LED_TICK 4
 
 void setup();
 void loop();
-void update_leds();
-void get_brightness();
-void update_mqtt_status();
+void update_leds(void*);
+void get_brightness(void*);
+void update_mqtt_status(void*);
 void update_mdns();
 
 void setup_wifi();
@@ -30,16 +30,14 @@ static const char* mypass = MAKELIGHT_PASS;
 static const char* mqtt_server = MAKELIGHT_MQTT_SERVER;
 static const char* hostname = WEBNAME;
 static const int mqtt_server_port = MAKELIGHT_MQTT_SERVER_PORT;
-static const char* update_path=UPDATEPATH;
-static const char* update_username=UPDATE_USERNAME;
-static const char* update_passwort=UPDATE_PASSWORT;
+static const char* update_path = UPDATEPATH;
+static const char* update_username = UPDATE_USERNAME;
+static const char* update_passwort = UPDATE_PASSWORT;
 static const int update_port = UPDATE_PORT;
-
 
 // for OTA
 static ESP8266WebServer httpServer(update_port);
 static ESP8266HTTPUpdateServer httpUpdater;
-
 
 // create MQTT client
 static WiFiClient espClient;
@@ -52,7 +50,7 @@ static TickerScheduler ticker(5);
 
 void setup()
 {
-    pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+    pinMode(BUILTIN_LED, OUTPUT); // Initialize the BUILTIN_LED pin as an output
 
     // Serial Stuff
     Serial.begin(115200);
@@ -67,9 +65,9 @@ void setup()
     digitalWrite(D6, LOW);
 
     // initialize schedule
-    ticker.add(0, LED_TICK, update_leds);
-    ticker.add(1, 1000, update_mqtt_status);
-    ticker.add(2, 1000, get_brightness);
+    ticker.add(0, LED_TICK, update_leds, 0);
+    ticker.add(1, 1000, update_mqtt_status, 0);
+    ticker.add(2, 1000, get_brightness, 0);
     //ticker.add(3, LED_TICK, update_mdns);
 
     // LED Strip acitvate
@@ -83,11 +81,11 @@ void setup()
     setup_wifi();
     setup_OTA();
 
-    client.setServer(mqtt_server , mqtt_server_port);
+    client.setServer(mqtt_server, mqtt_server_port);
     client.setCallback(callback);
 }
 
-void setup_wifi() 
+void setup_wifi()
 {
 
     digitalWrite(BUILTIN_LED, LOW);
@@ -100,8 +98,7 @@ void setup_wifi()
     WiFi.hostname(hostname);
     WiFi.begin(myssid, mypass);
 
-    while (WiFi.status() != WL_CONNECTED)
-    {
+    while (WiFi.status() != WL_CONNECTED) {
         digitalWrite(BUILTIN_LED, LOW);
         delay(500);
         Serial.print(".");
@@ -115,29 +112,24 @@ void setup_wifi()
     delay(100);
 }
 
-void callback(char* topic, byte* payload, size_t length) {
+void callback(char* topic, byte* payload, size_t length)
+{
     Serial.println(topic);
 
-    if(String(topic) == String("/home/wohnzimmer/flaschengeist/command"))
-    {
-        if(length > 0)
-        {
+    if (String(topic) == String("/home/wohnzimmer/flaschengeist/command")) {
+        if (length > 0) {
             // Switch on the LED if an 1 was received as first character
-            if (static_cast<char>(payload[0]) == '0')
-            {
+            if (static_cast<char>(payload[0]) == '0') {
                 CLedStrip* strip = CLedStrip::getStrip_ptr();
                 strip->switch_program(0);
-            }
-            else
-            {
+            } else {
                 CLedStrip* strip = CLedStrip::getStrip_ptr();
                 strip->switch_program(2);
             }
         }
     }
 
-    if(String(topic) == String("/home/wohnzimmer/flaschengeist/auto"))
-    {
+    if (String(topic) == String("/home/wohnzimmer/flaschengeist/auto")) {
         if (static_cast<char>(payload[0]) == '0')
             autoSwitchOnEnabled = false;
         else
@@ -145,28 +137,23 @@ void callback(char* topic, byte* payload, size_t length) {
     }
 }
 
-void reconnect() 
+void reconnect()
 {
     // Loop until we're reconnected
-    while (!client.connected())
-    {
+    while (!client.connected()) {
         Serial.print("Attempting MQTT connection...");
         // Attempt to connect
-        if (client.connect(hostname))
-        {
+        if (client.connect(hostname)) {
             Serial.println("connected");
             // Once connected, publish an announcement...
             client.publish("/home/wohnzimmer/flaschengeist/status",
-                           String(CLedStrip::getStrip_ptr()->getConf()
-                                  .old_prog).c_str());
+                String(CLedStrip::getStrip_ptr()->getConf().old_prog).c_str());
             // ... and resubscribe
             client.subscribe("/home/wohnzimmer/command");
             client.subscribe("/home/wohnzimmer/flaschengeist/command");
             client.subscribe("/home/wohnzimmer/flaschengeist/auto");
             digitalWrite(BUILTIN_LED, HIGH);
-        }
-        else
-        {
+        } else {
             digitalWrite(BUILTIN_LED, LOW);
             Serial.print("failed, rc=");
             Serial.print(client.state());
@@ -186,30 +173,27 @@ void loop()
     //int a0 = analogRead(A0);
     // busy wait
     //	ns_net::Network::GetNetwork()->webwork();
-    if(!client.connected())
-    {
+    if (!client.connected()) {
         reconnect();
     }
     client.loop();
     update_mdns();
 }
 
-void update_leds()
+void update_leds(void*)
 {
     // update led pattern / program
     CLedStrip::getStrip_ptr()->update();
 }
 
-void get_brightness()
+void get_brightness(void*)
 {
     int br = analogRead(A0);
-    if(client.connected())
-    {
+    if (client.connected()) {
         client.publish("/home/wohnzimmer/flaschengeist/brightness",
-                       String(br).c_str());
+            String(br).c_str());
     }
-    if( autoSwitchOnEnabled)
-    {
+    if (autoSwitchOnEnabled) {
         CLedStrip* strip = CLedStrip::getStrip_ptr();
         if (br < 100)
             strip->switch_program(2);
@@ -220,21 +204,19 @@ void get_brightness()
     // ... and resubscribe
 }
 
-void update_mqtt_status()
+void update_mqtt_status(void*)
 {
-    if(client.connected())
-    {
+    if (client.connected()) {
         client.publish("/home/wohnzimmer/flaschengeist/status",
-                       String(CLedStrip::getStrip_ptr()->getConf().old_prog).c_str());
+            String(CLedStrip::getStrip_ptr()->getConf().old_prog).c_str());
 
-        client.publish("/home/wohnzimmer/flaschengeist/auto", String(autoSwitchOnEnabled).c_str() );
+        client.publish("/home/wohnzimmer/flaschengeist/auto", String(autoSwitchOnEnabled).c_str());
     }
 }
 
 void update_mdns()
 {
-    if(WiFi.isConnected())
-    {
+    if (WiFi.isConnected()) {
         MDNS.update();
     }
 }
